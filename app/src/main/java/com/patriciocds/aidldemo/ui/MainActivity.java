@@ -95,13 +95,19 @@ public class MainActivity extends AppCompatActivity {
     private void sumClick() {
         if (isBound && connection != null) {
             try {
-                int valueA = Integer.parseInt(edtValueA.getText().toString());
-                int valueB = Integer.parseInt(edtValueB.getText().toString());
+                if (formIsValid()) {
+                    int valueA = Integer.parseInt(edtValueA.getText().toString().trim());
+                    int valueB = Integer.parseInt(edtValueB.getText().toString().trim());
 
-                int result = mathematicsService.sum(valueA, valueB);
-                txtResult.setText("Resultado: " + result);
+                    int result = mathematicsService.sum(valueA, valueB);
+                    txtResult.setText("Resultado: " + result);
 
-                Log.d("AIDL_DEMO", "Result: " + result);
+                    Log.d("AIDL_DEMO", "Result: " + result);
+                } else {
+                    Toast.makeText(this, "Preencha os valores necessários.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
             } catch (Exception e) {
                 Log.e("AIDL_DEMO", "Error: " + e.getMessage());
             }
@@ -111,5 +117,12 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT
             ).show();
         }
+    }
+
+    private boolean formIsValid() {
+        return !(edtValueA.getText().toString().isEmpty() ||
+                edtValueA.getText().toString().isBlank() ||
+                edtValueB.getText().toString().isEmpty() ||
+                edtValueB.getText().toString().isBlank());
     }
 }
