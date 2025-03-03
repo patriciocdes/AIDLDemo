@@ -23,8 +23,10 @@ import com.patriciocds.aidldemo.R;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String AIDL_DEMO_DESC = "AIDL_DEMO";
+
     private IMathematics mathematicsService;
-    private boolean isBound = false;
+    private boolean isServiceConnected = false;
 
     private EditText edtValueA;
     private EditText edtValueB;
@@ -34,15 +36,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             mathematicsService = IMathematics.Stub.asInterface(service);
-            isBound = true;
+            isServiceConnected = true;
 
-            Log.d("AIDL_DEMO", "MathematicsService connected.");
+            printLog("MathematicsService connected.");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            isBound = false;
-            Log.d("AIDL_DEMO", "MathematicsService disconnected.");
+            closeService();
         }
     };
 
@@ -73,16 +74,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
-        if (isBound) {
+        if (isServiceConnected) {
             unbindService(connection);
-            isBound = false;
-
-            Log.d("AIDL_DEMO", "MathematicsService disconnected.");
+            closeService();
         }
     }
 
     private void connectService() {
-        Log.d("AIDL_DEMO", "Connecting to MathematicsService...");
+        printLog("Connecting to MathematicsService...");
 
         Intent intent = new Intent();
         intent.setAction("com.patriciocds.aidldemo.IMathematics");
@@ -91,38 +90,59 @@ public class MainActivity extends AppCompatActivity {
         bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
+    private void closeService() {
+        isServiceConnected = false;
+        mathematicsService = null;
+
+        printLog("MathematicsService disconnected.");
+    }
+
     @SuppressLint("SetTextI18n")
     private void sumClick() {
-        if (isBound && connection != null) {
+        if (isServiceConnected && connection != null) {
             try {
-                if (formIsValid()) {
+                if (checkForm()) {
                     int valueA = Integer.parseInt(edtValueA.getText().toString().trim());
                     int valueB = Integer.parseInt(edtValueB.getText().toString().trim());
-
                     int result = mathematicsService.sum(valueA, valueB);
+
                     txtResult.setText("Resultado: " + result);
 
-                    Log.d("AIDL_DEMO", "Result: " + result);
-                } else {
-                    Toast.makeText(this, "Preencha os valores necessários.",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    printLog("Result: " + result);
                 }
             } catch (Exception e) {
-                Log.e("AIDL_DEMO", "Error: " + e.getMessage());
+                printLog("Error: " + e.getMessage(), true);
             }
         } else {
-            Toast.makeText(this,
-                    "Connection error or service disconnected",
-                    Toast.LENGTH_SHORT
-            ).show();
+            makeText("Connection error or service disconnected");
         }
     }
 
-    private boolean formIsValid() {
-        return !(edtValueA.getText().toString().isEmpty() ||
+    private void printLog(String message) {
+        printLog(message, false);
+    }
+
+    private void printLog(String message, boolean isError) {
+        if (isError) {
+            Log.e(AIDL_DEMO_DESC, message);
+        } else {
+            Log.v(AIDL_DEMO_DESC, message);
+        }
+    }
+
+    private void makeText(String text) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean checkForm() {
+        if (edtValueA.getText().toString().isEmpty() ||
                 edtValueA.getText().toString().isBlank() ||
                 edtValueB.getText().toString().isEmpty() ||
-                edtValueB.getText().toString().isBlank());
+                edtValueB.getText().toString().isBlank()) {
+            makeText("Preencha os valores necessários.");
+            return false;
+        }
+
+        return true;
     }
 }
